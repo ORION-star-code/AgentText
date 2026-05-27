@@ -1,4 +1,4 @@
-import { readFile, writeFile, mkdir } from 'node:fs/promises';
+import { readFile, writeFile, mkdir, access } from 'node:fs/promises';
 import { dirname } from 'node:path';
 import { CodeGraph } from '../graph/code-graph.js';
 import { logger } from '../utils/logger.js';
@@ -44,7 +44,7 @@ export class IndexStore {
 
   async exists(indexPath: string): Promise<boolean> {
     try {
-      await readFile(indexPath, 'utf-8');
+      await access(indexPath);
       return true;
     } catch {
       return false;

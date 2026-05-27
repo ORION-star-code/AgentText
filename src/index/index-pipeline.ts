@@ -34,25 +34,31 @@ export class IndexPipeline {
     });
     logger.info(`Found ${files.length} files`);
 
-    // Step 2: Parse files
+    // Step 2: Parse files (batched parallel)
     logger.info('Step 2/4: Parsing files...');
     const parsedFiles: ParsedFile[] = [];
     let parseErrors = 0;
+    const BATCH_SIZE = 16;
 
-    for (const file of files) {
-      const parser = this.parserRegistry.getParser(file.language);
-      if (!parser) {
-        logger.debug(`No parser for ${file.language}: ${file.relativePath}`);
-        continue;
-      }
+    for (let i = 0; i < files.length; i += BATCH_SIZE) {
+      const batch = files.slice(i, i + BATCH_SIZE);
+      const results = await Promise.allSettled(
+        batch.map(async (file) => {
+          const parser = this.parserRegistry.getParser(file.language);
+          if (!parser) return null;
 
-      try {
-        const content = await readFile(file.absolutePath, 'utf-8');
-        const parsed = await parser.parse(file.relativePath, content);
-        parsedFiles.push(parsed);
-      } catch (error) {
-        parseErrors++;
-        logger.debug(`Failed to parse ${file.relativePath}: ${error}`);
+          const content = await readFile(file.absolutePath, 'utf-8');
+          return parser.parse(file.relativePath, content);
+        }),
+      );
+
+      for (const result of results) {
+        if (result.status === 'fulfilled' && result.value) {
+          parsedFiles.push(result.value);
+        } else if (result.status === 'rejected') {
+          parseErrors++;
+          logger.debug(`Parse error: ${result.reason}`);
+        }
       }
     }
     logger.info(`Parsed ${parsedFiles.length} files (${parseErrors} errors)`);

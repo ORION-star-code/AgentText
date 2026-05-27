@@ -4,6 +4,7 @@ export class CodeGraph {
   private nodes = new Map<string, GraphNode>();
   private edges: GraphEdge[] = [];
   private fileIndex = new Map<string, Set<string>>();
+  private nameIndex = new Map<string, string[]>();
 
   addNode(id: string, symbol: GraphNode['symbol'], filePath: string): void {
     const node: GraphNode = {
@@ -19,6 +20,14 @@ export class CodeGraph {
       this.fileIndex.set(filePath, new Set());
     }
     this.fileIndex.get(filePath)!.add(id);
+
+    const lower = symbol.name.toLowerCase();
+    const existing = this.nameIndex.get(lower);
+    if (existing) {
+      existing.push(id);
+    } else {
+      this.nameIndex.set(lower, [id]);
+    }
   }
 
   addEdge(edge: GraphEdge): void {
@@ -65,10 +74,21 @@ export class CodeGraph {
 
   searchByName(name: string): GraphNode[] {
     const lower = name.toLowerCase();
+
+    // Exact match via index — O(1)
+    const exact = this.nameIndex.get(lower);
+    if (exact) {
+      return exact.map((id) => this.nodes.get(id)!).filter(Boolean);
+    }
+
+    // Substring fallback — O(n)
     const results: GraphNode[] = [];
-    for (const node of this.nodes.values()) {
-      if (node.symbol.name.toLowerCase().includes(lower)) {
-        results.push(node);
+    for (const [key, ids] of this.nameIndex) {
+      if (key.includes(lower)) {
+        for (const id of ids) {
+          const node = this.nodes.get(id);
+          if (node) results.push(node);
+        }
       }
     }
     return results;
