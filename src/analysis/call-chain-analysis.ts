@@ -1,6 +1,7 @@
 import type { CodeGraph } from '../graph/code-graph.js';
 import { CallChainTracer } from '../graph/call-chain-tracer.js';
 import { ClaudeClient } from '../llm/claude-client.js';
+import type { ClaudeConfig } from '../llm/claude-client.js';
 import { PromptBuilder } from '../llm/prompt-builder.js';
 import { logger } from '../utils/logger.js';
 
@@ -10,10 +11,10 @@ export class CallChainAnalysis {
   private claude: ClaudeClient;
   private promptBuilder: PromptBuilder;
 
-  constructor(graph: CodeGraph) {
+  constructor(graph: CodeGraph, claudeConfig?: Partial<ClaudeConfig>) {
     this.graph = graph;
     this.tracer = new CallChainTracer(graph);
-    this.claude = new ClaudeClient();
+    this.claude = new ClaudeClient(claudeConfig);
     this.promptBuilder = new PromptBuilder();
   }
 

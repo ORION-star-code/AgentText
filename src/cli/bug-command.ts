@@ -18,7 +18,11 @@ export async function bugCommand(description: string, repoPath?: string): Promis
 
   const { graph } = await pipeline.loadIndex(rootPath, config);
 
-  const localization = new BugLocalization(graph);
+  const localization = new BugLocalization(graph, {
+    model: config.model,
+    maxTokens: config.maxTokens,
+    temperature: config.temperature,
+  });
   const result = await localization.localize(description, rootPath);
 
   console.log('\n## Bug Localization Report\n');

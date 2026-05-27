@@ -1,6 +1,7 @@
 import type { CodeGraph } from '../graph/code-graph.js';
 import type { CodeContext } from '../llm/types.js';
 import { ClaudeClient } from '../llm/claude-client.js';
+import type { ClaudeConfig } from '../llm/claude-client.js';
 import { PromptBuilder } from '../llm/prompt-builder.js';
 import { buildContextFromFiles } from '../utils/context-builder.js';
 import { extractKeywords } from '../utils/keyword-extractor.js';
@@ -11,9 +12,9 @@ export class BugLocalization {
   private claude: ClaudeClient;
   private promptBuilder: PromptBuilder;
 
-  constructor(graph: CodeGraph) {
+  constructor(graph: CodeGraph, claudeConfig?: Partial<ClaudeConfig>) {
     this.graph = graph;
-    this.claude = new ClaudeClient();
+    this.claude = new ClaudeClient(claudeConfig);
     this.promptBuilder = new PromptBuilder();
   }
 

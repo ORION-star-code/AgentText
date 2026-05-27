@@ -26,7 +26,11 @@ export async function docsCommand(docType: string, repoPath?: string): Promise<v
 
   const { graph } = await pipeline.loadIndex(rootPath, config);
 
-  const docGen = new DocGeneration(graph);
+  const docGen = new DocGeneration(graph, {
+    model: config.model,
+    maxTokens: config.maxTokens,
+    temperature: config.temperature,
+  });
 
   if (docType === 'architecture') {
     const diagram = docGen.generateArchitectureDiagram();

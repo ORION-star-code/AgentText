@@ -108,7 +108,11 @@ program
       }
 
       const { graph } = await pipeline.loadIndex(opts.repo, config);
-      const analysis = new CallChainAnalysis(graph);
+      const analysis = new CallChainAnalysis(graph, {
+        model: config.model,
+        maxTokens: config.maxTokens,
+        temperature: config.temperature,
+      });
       const result = await analysis.analyzeSymbol(symbol);
       console.log(result);
     } catch (error) {

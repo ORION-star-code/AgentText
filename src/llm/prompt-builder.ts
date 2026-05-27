@@ -45,8 +45,10 @@ export class PromptBuilder {
     return SYSTEM_PROMPT;
   }
 
-  buildAnalysisPrompt(question: string, _context: CodeContext): string {
-    return question;
+  buildAnalysisPrompt(question: string, context: CodeContext): string {
+    if (context.files.length === 0) return question;
+    const fileList = context.files.map((f) => `- ${f.path} (${f.startLine}-${f.endLine})`).join('\n');
+    return `${question}\n\nThe following code files are available for reference:\n${fileList}`;
   }
 
   buildCallChainPrompt(symbolName: string, chain: CallChain): string {
@@ -89,11 +91,15 @@ Provide:
 3. Recommended testing strategy`;
   }
 
-  buildBugLocalizationPrompt(errorDescription: string, _context: CodeContext): string {
+  buildBugLocalizationPrompt(errorDescription: string, context: CodeContext): string {
+    const contextSection = context.files.length > 0
+      ? `\n\n## Available Code Context\n${context.files.map((f) => `- ${f.path} (${f.startLine}-${f.endLine})`).join('\n')}`
+      : '';
     return `Help localize this bug:
 
 ## Error Description
 ${errorDescription}
+${contextSection}
 
 Explain:
 1. Most likely location of the bug (with file:line references)
@@ -102,14 +108,17 @@ Explain:
 4. Suggested fix approach`;
   }
 
-  buildDocGenerationPrompt(docType: DocType, _context: CodeContext): string {
+  buildDocGenerationPrompt(docType: DocType, context: CodeContext): string {
     const instructions: Record<DocType, string> = {
       readme: 'Generate a comprehensive README.md for this project. Include: project overview, features, installation, usage, architecture overview, and contributing guidelines.',
       architecture: 'Generate an architecture document with Mermaid diagrams showing: module relationships, data flow, and key design patterns.',
       api: 'Generate API documentation for all exported symbols. Include: function signatures, parameters, return types, and usage examples.',
     };
 
-    return instructions[docType];
+    const contextSection = context.files.length > 0
+      ? `\n\n## Project Files\n${context.files.map((f) => `- ${f.path}`).join('\n')}`
+      : '';
+    return `${instructions[docType]}${contextSection}`;
   }
 
   async buildContextFromFiles(
