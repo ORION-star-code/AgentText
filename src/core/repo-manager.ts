@@ -39,8 +39,8 @@ export class RepoManager {
     try {
       const status = await git.status();
       branch = status.current ?? undefined;
-    } catch {
-      // Ignore errors getting branch info
+    } catch (error) {
+      logger.debug(`Could not get branch info: ${error}`);
     }
 
     logger.info(`Opened local repo at ${path}`);

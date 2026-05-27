@@ -9,8 +9,7 @@ import { logger } from '../utils/logger.js';
 export async function docsCommand(docType: string, repoPath?: string): Promise<void> {
   const validTypes: DocType[] = ['readme', 'architecture', 'api'];
   if (!validTypes.includes(docType as DocType)) {
-    console.error(`Invalid doc type: ${docType}. Valid types: ${validTypes.join(', ')}`);
-    process.exit(1);
+    throw new Error(`Invalid doc type: ${docType}. Valid types: ${validTypes.join(', ')}`);
   }
 
   const rootPath = repoPath ? resolve(repoPath) : process.cwd();
@@ -20,8 +19,7 @@ export async function docsCommand(docType: string, repoPath?: string): Promise<v
   const pipeline = new IndexPipeline();
   const hasIndex = await pipeline.hasIndex(rootPath, config);
   if (!hasIndex) {
-    console.error('No index found. Run "codeinsight index <repo>" first.');
-    process.exit(1);
+    throw new Error('No index found. Run "codeinsight index <repo>" first.');
   }
 
   const { graph } = await pipeline.loadIndex(rootPath, config);

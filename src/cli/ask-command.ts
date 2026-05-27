@@ -16,8 +16,7 @@ export async function askCommand(question: string, repoPath?: string): Promise<v
   logger.info('Loading index...');
   const hasIndex = await pipeline.hasIndex(rootPath, config);
   if (!hasIndex) {
-    console.error('No index found. Run "codeinsight index <repo>" first.');
-    process.exit(1);
+    throw new Error('No index found. Run "codeinsight index <repo>" first.');
   }
 
   const { graph, metadata } = await pipeline.loadIndex(rootPath, config);

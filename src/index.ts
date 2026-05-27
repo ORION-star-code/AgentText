@@ -103,8 +103,7 @@ program
       const pipeline = new IndexPipeline();
       const hasIndex = await pipeline.hasIndex(opts.repo, config);
       if (!hasIndex) {
-        console.error('No index found. Run "codeinsight index <repo>" first.');
-        process.exit(1);
+        throw new Error('No index found. Run "codeinsight index <repo>" first.');
       }
 
       const { graph } = await pipeline.loadIndex(opts.repo, config);
