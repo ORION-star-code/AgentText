@@ -11,6 +11,7 @@ import { docsCommand } from './cli/docs-command.js';
 import { callchainCommand } from './cli/callchain-command.js';
 import { issueCommand } from './cli/issue-command.js';
 import { logger } from './utils/logger.js';
+import { spinner, success, chalk } from './utils/ux.js';
 
 const program = new Command();
 
@@ -34,8 +35,9 @@ program
     try {
       const config = loadConfig();
       const pipeline = new IndexPipeline();
+      console.log(chalk.bold(`\nIndexing ${chalk.cyan(repo)}...\n`));
       await pipeline.run(repo, config);
-      console.log('Indexing complete!');
+      console.log('\n' + success('Indexing complete!'));
     } catch (error) {
       logger.error('Indexing failed', error);
       process.exit(1);

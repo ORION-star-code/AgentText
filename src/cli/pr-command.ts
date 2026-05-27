@@ -4,6 +4,7 @@ import { IndexPipeline } from '../index/index-pipeline.js';
 import { GitHubClient } from '../github/github-client.js';
 import { PrAnalyzer } from '../github/pr-analyzer.js';
 import { logger } from '../utils/logger.js';
+import { spinner, heading, riskLevel, filePath, chalk } from '../utils/ux.js';
 
 interface PrUrlParts {
   owner: string;
@@ -23,37 +24,38 @@ export async function prCommand(prUrl: string, repoPath?: string): Promise<void>
   const rootPath = repoPath ? resolve(repoPath) : process.cwd();
   const config = loadConfig(rootPath);
 
-  // Parse PR URL
   const { owner, repo, prNumber } = parsePrUrl(prUrl);
-  logger.info(`Analyzing PR: ${owner}/${repo}#${prNumber}`);
 
-  // Load index
+  const sp = spinner('Loading index...');
   const pipeline = new IndexPipeline();
   const hasIndex = await pipeline.hasIndex(rootPath, config);
   if (!hasIndex) {
-    throw new Error('No index found. Run "codeinsight index <repo>" first.');
+    sp.fail('No index found');
+    throw new Error('No index found. Run "codeinsight index <repo)" first.');
   }
 
   const { graph } = await pipeline.loadIndex(rootPath, config);
+  sp.succeed('Index loaded');
 
-  // Fetch PR diff
+  const sp2 = spinner(`Fetching PR #${prNumber} from ${owner}/${repo}...`);
   const github = new GitHubClient();
   const diff = await github.getPrDiff(owner, repo, prNumber);
+  sp2.succeed(`Fetched PR: ${diff.title}`);
 
-  // Analyze
+  const sp3 = spinner('Analyzing impact...');
   const analyzer = new PrAnalyzer(graph);
   const report = analyzer.analyzePr(diff);
+  sp3.succeed('Analysis complete');
 
-  // Output
-  console.log('\n## PR Analysis Report\n');
-  console.log(`Risk Level: **${report.riskLevel.toUpperCase()}**\n`);
+  console.log('\n' + heading('PR Analysis Report') + '\n');
+  console.log(`Risk Level: ${riskLevel(report.riskLevel)}\n`);
   console.log(report.summary);
   console.log('\n' + report.details);
 
   if (report.impactedFiles.length > 0) {
-    console.log('\n## Potentially Impacted Files\n');
+    console.log('\n' + heading('Potentially Impacted Files') + '\n');
     for (const file of report.impactedFiles) {
-      console.log(`- ${file}`);
+      console.log(`- ${filePath(file)}`);
     }
   }
 }

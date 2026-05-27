@@ -5,6 +5,7 @@ import { ClaudeClient } from '../llm/claude-client.js';
 import { PromptBuilder } from '../llm/prompt-builder.js';
 import { logger } from '../utils/logger.js';
 import { extractKeywords } from '../utils/keyword-extractor.js';
+import { spinner, filePath, chalk } from '../utils/ux.js';
 import type { CodeContext } from '../llm/types.js';
 import type { CodeGraph } from '../graph/code-graph.js';
 
@@ -13,26 +14,25 @@ export async function askCommand(question: string, repoPath?: string): Promise<v
   const config = loadConfig(rootPath);
   const pipeline = new IndexPipeline();
 
-  logger.info('Loading index...');
+  const sp = spinner('Loading index...');
   const hasIndex = await pipeline.hasIndex(rootPath, config);
   if (!hasIndex) {
+    sp.fail('No index found');
     throw new Error('No index found. Run "codeinsight index <repo>" first.');
   }
 
   const { graph, metadata } = await pipeline.loadIndex(rootPath, config);
-  logger.info(`Index loaded: ${metadata.nodeCount} nodes from ${metadata.fileCount} files`);
+  sp.succeed(`Index loaded: ${metadata.nodeCount} nodes from ${metadata.fileCount} files`);
 
-  // Retrieve relevant context
-  logger.info('Retrieving relevant context...');
+  const sp2 = spinner('Retrieving relevant context...');
   const context = await buildContext(question, graph, rootPath, config.maxTokens);
+  sp2.succeed(`Found ${context.files.length} relevant files`);
 
-  // Build prompts
   const promptBuilder = new PromptBuilder();
   const systemPrompt = promptBuilder.getSystemPrompt();
   const userPrompt = promptBuilder.buildAnalysisPrompt(question, context);
 
-  // Call Claude
-  logger.info('Analyzing with Claude...');
+  const sp3 = spinner('Analyzing with Claude...');
   const claudeClient = new ClaudeClient({
     model: config.model,
     maxTokens: config.maxTokens,
@@ -40,19 +40,19 @@ export async function askCommand(question: string, repoPath?: string): Promise<v
   });
 
   const response = await claudeClient.analyze(systemPrompt, userPrompt, context);
+  sp3.succeed('Analysis complete');
 
-  // Output
   console.log('\n' + response.answer + '\n');
 
   if (response.citations.length > 0) {
-    console.log('---');
-    console.log('Citations:');
+    console.log(chalk.bold('---'));
+    console.log(chalk.bold('Citations:'));
     for (const cite of response.citations) {
-      console.log(`  ${cite.filePath}:${cite.line}`);
+      console.log(`  ${filePath(`${cite.filePath}:${cite.line}`)}`);
     }
   }
 
-  console.log(`\n(${response.tokensUsed.input} input tokens, ${response.tokensUsed.output} output tokens)`);
+  console.log(chalk.dim(`\n(${response.tokensUsed.input} input tokens, ${response.tokensUsed.output} output tokens)`));
 }
 
 async function buildContext(
