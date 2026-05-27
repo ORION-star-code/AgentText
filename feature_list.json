@@ -13,64 +13,64 @@
       "name": "仓库管理与文件发现",
       "description": "克隆/打开仓库，遍历目录，过滤语言，尊重 .gitignore",
       "dependencies": ["feat-001"],
-      "status": "in-progress",
-      "evidence": ""
+      "status": "done",
+      "evidence": "6 tests pass, file discovery with gitignore/language filtering working"
     },
     {
       "id": "feat-003",
       "name": "解析管道",
       "description": "TS/JS 文件解析，提取符号、导入、导出、调用表达式",
       "dependencies": ["feat-002"],
-      "status": "not-started",
-      "evidence": ""
+      "status": "done",
+      "evidence": "8 tests pass, ts-morph parser with re-export support"
     },
     {
       "id": "feat-004",
       "name": "代码图构建",
       "description": "内存代码图数据结构，符号解析，索引存储",
       "dependencies": ["feat-003"],
-      "status": "not-started",
-      "evidence": ""
+      "status": "done",
+      "evidence": "9 tests pass (code-graph 7 + index-store 2), 3-pass symbol resolver"
     },
     {
       "id": "feat-005",
       "name": "Claude 集成与问答",
       "description": "Claude API 封装，上下文组装，问答命令（带 file:line 引用）",
       "dependencies": ["feat-004"],
-      "status": "not-started",
-      "evidence": ""
+      "status": "done",
+      "evidence": "11 tests pass (prompt-builder 5 + response-parser 6)"
     },
     {
       "id": "feat-006",
       "name": "GitHub 集成",
       "description": "PR diff 解析，影响分析，Issue 关联代码",
       "dependencies": ["feat-005"],
-      "status": "not-started",
-      "evidence": ""
+      "status": "done",
+      "evidence": "2 integration tests pass, PrAnalyzer with risk assessment"
     },
     {
       "id": "feat-007",
       "name": "分析能力",
       "description": "调用链追踪、影响分析、Bug 定位",
       "dependencies": ["feat-006"],
-      "status": "not-started",
-      "evidence": ""
+      "status": "done",
+      "evidence": "9 tests pass (call-chain-tracer 5 + impact-analyzer 4), BFS/DFS with cycle detection"
     },
     {
       "id": "feat-008",
       "name": "文档生成",
       "description": "自动生成 README、架构图（Mermaid）、API 文档",
       "dependencies": ["feat-007"],
-      "status": "not-started",
-      "evidence": ""
+      "status": "done",
+      "evidence": "3 integration tests pass, Mermaid architecture diagram generation"
     },
     {
       "id": "feat-009",
       "name": "CLI 完善与集成测试",
       "description": "CLI 美化、端到端集成测试、文档完善",
       "dependencies": ["feat-008"],
-      "status": "not-started",
-      "evidence": ""
+      "status": "done",
+      "evidence": "54 tests pass, all 6 CLI commands wired, ARCHITECTURE.md complete"
     }
   ]
 }
