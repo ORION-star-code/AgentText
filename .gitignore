@@ -1,0 +1,40 @@
+# Dependencies
+node_modules/
+vendor/
+__pycache__/
+
+# Build output
+dist/
+build/
+out/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Testing
+coverage/
+.nyc_output/
+
+# Claude Code local settings
+.claude/settings.local.json
+
+# Temporary files
+tmp/
+temp/
+*.tmp
