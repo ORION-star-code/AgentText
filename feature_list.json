@@ -5,15 +5,15 @@
       "name": "环境配置验证",
       "description": "项目骨架搭建：package.json、tsconfig、ESLint、Prettier、CLI 入口、工具函数",
       "dependencies": [],
-      "status": "in-progress",
-      "evidence": ""
+      "status": "done",
+      "evidence": "npm install/tsc/test/build 全部通过，已推送到 GitHub"
     },
     {
       "id": "feat-002",
       "name": "仓库管理与文件发现",
       "description": "克隆/打开仓库，遍历目录，过滤语言，尊重 .gitignore",
       "dependencies": ["feat-001"],
-      "status": "not-started",
+      "status": "in-progress",
       "evidence": ""
     },
     {
