@@ -8,7 +8,8 @@ import { askCommand } from './cli/ask-command.js';
 import { prCommand } from './cli/pr-command.js';
 import { bugCommand } from './cli/bug-command.js';
 import { docsCommand } from './cli/docs-command.js';
-import { CallChainAnalysis } from './analysis/call-chain-analysis.js';
+import { callchainCommand } from './cli/callchain-command.js';
+import { issueCommand } from './cli/issue-command.js';
 import { logger } from './utils/logger.js';
 
 const program = new Command();
@@ -99,23 +100,22 @@ program
   .action(async (symbol: string) => {
     try {
       const opts = program.opts<{ repo: string }>();
-      const config = loadConfig(opts.repo);
-      const pipeline = new IndexPipeline();
-      const hasIndex = await pipeline.hasIndex(opts.repo, config);
-      if (!hasIndex) {
-        throw new Error('No index found. Run "codeinsight index <repo>" first.');
-      }
-
-      const { graph } = await pipeline.loadIndex(opts.repo, config);
-      const analysis = new CallChainAnalysis(graph, {
-        model: config.model,
-        maxTokens: config.maxTokens,
-        temperature: config.temperature,
-      });
-      const result = await analysis.analyzeSymbol(symbol);
-      console.log(result);
+      await callchainCommand(symbol, opts.repo);
     } catch (error) {
       logger.error('Call chain analysis failed', error);
+      process.exit(1);
+    }
+  });
+
+program
+  .command('issue <number>')
+  .description('分析 GitHub Issue 并关联代码')
+  .action(async (number: string) => {
+    try {
+      const opts = program.opts<{ repo: string }>();
+      await issueCommand(number, opts.repo);
+    } catch (error) {
+      logger.error('Issue analysis failed', error);
       process.exit(1);
     }
   });

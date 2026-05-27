@@ -38,3 +38,7 @@ coverage/
 tmp/
 temp/
 *.tmp
+
+# CodeInsight index
+.codeinsight/
+.codeinsight.json

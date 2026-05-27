@@ -19,6 +19,10 @@ export interface CodeInsightConfig {
   indexPath: string;
   /** Log level */
   logLevel: 'debug' | 'info' | 'warn' | 'error';
+  /** GitHub repo owner (for issue/PR commands) */
+  repoOwner?: string;
+  /** GitHub repo name (for issue/PR commands) */
+  repoName?: string;
 }
 
 const DEFAULT_CONFIG: CodeInsightConfig = {
@@ -42,11 +46,37 @@ export function loadConfig(rootPath: string = process.cwd()): CodeInsightConfig 
       const raw = readFileSync(configPath, 'utf-8');
       const userConfig = JSON.parse(raw);
       logger.debug('Loaded config from', configPath);
-      return { ...DEFAULT_CONFIG, ...userConfig };
+      return validateConfig({ ...DEFAULT_CONFIG, ...userConfig });
     } catch (error) {
       logger.warn(`Failed to parse ${CONFIG_FILE}, using defaults`, error);
     }
   }
 
   return { ...DEFAULT_CONFIG };
+}
+
+export function validateConfig(config: CodeInsightConfig): CodeInsightConfig {
+  if (typeof config.model !== 'string' || config.model.length === 0) {
+    throw new Error('Config: model must be a non-empty string');
+  }
+  if (typeof config.maxTokens !== 'number' || config.maxTokens < 1) {
+    throw new Error('Config: maxTokens must be a positive number');
+  }
+  if (typeof config.temperature !== 'number' || config.temperature < 0 || config.temperature > 1) {
+    throw new Error('Config: temperature must be between 0 and 1');
+  }
+  if (typeof config.maxFiles !== 'number' || config.maxFiles < 1) {
+    throw new Error('Config: maxFiles must be a positive number');
+  }
+  if (typeof config.maxFileSizeBytes !== 'number' || config.maxFileSizeBytes < 1) {
+    throw new Error('Config: maxFileSizeBytes must be a positive number');
+  }
+  if (!Array.isArray(config.languages)) {
+    throw new Error('Config: languages must be an array');
+  }
+  const validLogLevels = ['debug', 'info', 'warn', 'error'];
+  if (!validLogLevels.includes(config.logLevel)) {
+    throw new Error(`Config: logLevel must be one of: ${validLogLevels.join(', ')}`);
+  }
+  return config;
 }
