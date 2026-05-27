@@ -1,23 +1,8 @@
-import type { Citation } from './types.js';
+import { extractCitations } from '../utils/citation-extractor.js';
 
 export class ResponseParser {
-  extractCitations(text: string): Citation[] {
-    const citations: Citation[] = [];
-    const regex = /([\w./\-]+\.\w+)(?::(\d+)|\s*\(line\s*(\d+)\))/g;
-    let match;
-
-    while ((match = regex.exec(text)) !== null) {
-      const filePath = match[1];
-      const line = parseInt(match[2] ?? match[3], 10);
-
-      const start = Math.max(0, match.index - 30);
-      const end = Math.min(text.length, match.index + match[0].length + 30);
-      const snippet = text.slice(start, end).trim();
-
-      citations.push({ filePath, line, snippet });
-    }
-
-    return citations;
+  extractCitations(text: string) {
+    return extractCitations(text, 30);
   }
 
   extractSections(text: string): Map<string, string> {

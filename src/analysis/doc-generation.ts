@@ -2,7 +2,7 @@ import type { CodeGraph } from '../graph/code-graph.js';
 import type { DocType, CodeContext } from '../llm/types.js';
 import { ClaudeClient } from '../llm/claude-client.js';
 import { PromptBuilder } from '../llm/prompt-builder.js';
-import { readFile } from 'node:fs/promises';
+import { buildContextFromFiles } from '../utils/context-builder.js';
 import { logger } from '../utils/logger.js';
 
 export class DocGeneration {
@@ -75,34 +75,8 @@ export class DocGeneration {
   }
 
   private async buildContext(rootPath: string): Promise<CodeContext> {
-    const files = [];
     const nodes = this.graph.getAllNodes();
     const fileSet = new Set(nodes.map((n) => n.filePath));
-
-    let totalChars = 0;
-    const maxChars = 400000;
-
-    for (const filePath of fileSet) {
-      if (totalChars >= maxChars) break;
-
-      try {
-        const content = await readFile(`${rootPath}/${filePath}`, 'utf-8');
-        const lines = content.split('\n');
-        const truncated = lines.slice(0, 50).join('\n');
-
-        files.push({
-          path: filePath,
-          startLine: 1,
-          endLine: Math.min(lines.length, 50),
-          content: truncated,
-          relevanceScore: 1.0,
-        });
-        totalChars += truncated.length;
-      } catch {
-        // Skip unreadable files
-      }
-    }
-
-    return { files, maxContextTokens: 100000 };
+    return buildContextFromFiles([...fileSet], rootPath, { maxLines: 50 });
   }
 }

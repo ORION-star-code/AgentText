@@ -4,6 +4,7 @@ import { IndexPipeline } from '../index/index-pipeline.js';
 import { ClaudeClient } from '../llm/claude-client.js';
 import { PromptBuilder } from '../llm/prompt-builder.js';
 import { logger } from '../utils/logger.js';
+import { extractKeywords } from '../utils/keyword-extractor.js';
 import type { CodeContext } from '../llm/types.js';
 import type { CodeGraph } from '../graph/code-graph.js';
 
@@ -77,15 +78,3 @@ async function buildContext(
   return promptBuilder.buildContextFromFiles(filePaths, rootPath, maxTokens);
 }
 
-function extractKeywords(question: string): string[] {
-  const stopWords = new Set([
-    'how', 'does', 'do', 'what', 'is', 'the', 'a', 'an', 'in', 'to', 'and', 'of',
-    'for', 'this', 'that', 'it', 'can', 'you', 'explain', 'show', 'me', 'where',
-  ]);
-
-  return question
-    .toLowerCase()
-    .replace(/[^a-z0-9\s]/g, ' ')
-    .split(/\s+/)
-    .filter((w) => w.length > 2 && !stopWords.has(w));
-}

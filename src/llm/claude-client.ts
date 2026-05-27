@@ -1,5 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { logger } from '../utils/logger.js';
+import { extractCitations } from '../utils/citation-extractor.js';
 import type { CodeContext, ClaudeResponse } from './types.js';
 
 export interface ClaudeConfig {
@@ -62,7 +63,7 @@ export class ClaudeClient {
 
       return {
         answer,
-        citations: this.extractCitations(answer),
+        citations: extractCitations(answer, 20),
         tokensUsed,
       };
     } catch (error) {
@@ -89,24 +90,4 @@ export class ClaudeClient {
     return parts.join('\n');
   }
 
-  private extractCitations(text: string): ClaudeResponse['citations'] {
-    const citations: ClaudeResponse['citations'] = [];
-    // Match patterns like "file.ts:42" or "file.ts (line 42)"
-    const regex = /([\w./\-]+\.\w+)(?::(\d+)|\s*\(line\s*(\d+)\))/g;
-    let match;
-
-    while ((match = regex.exec(text)) !== null) {
-      const filePath = match[1];
-      const line = parseInt(match[2] ?? match[3], 10);
-
-      // Get surrounding text as snippet
-      const start = Math.max(0, match.index - 20);
-      const end = Math.min(text.length, match.index + match[0].length + 20);
-      const snippet = text.slice(start, end).trim();
-
-      citations.push({ filePath, line, snippet });
-    }
-
-    return citations;
-  }
 }

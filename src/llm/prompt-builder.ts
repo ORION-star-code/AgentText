@@ -1,5 +1,5 @@
-import type { CodeContext, ContextFile, DocType } from './types.js';
-import { readFile } from 'node:fs/promises';
+import type { CodeContext, DocType } from './types.js';
+import { buildContextFromFiles } from '../utils/context-builder.js';
 
 // Forward-compatible types for modules to be built in later steps
 interface CallChainNode {
@@ -117,49 +117,10 @@ Explain:
     rootPath: string,
     maxTokens: number,
   ): Promise<CodeContext> {
-    const files: ContextFile[] = [];
-    let totalChars = 0;
-    const charsPerToken = 4;
-    const maxChars = maxTokens * charsPerToken;
-
-    for (const filePath of filePaths) {
-      if (totalChars >= maxChars) break;
-
-      try {
-        const content = await readFile(`${rootPath}/${filePath}`, 'utf-8');
-        const lines = content.split('\n');
-        const truncated = lines.slice(0, 100).join('\n');
-        const addedChars = truncated.length;
-
-        if (totalChars + addedChars > maxChars) {
-          const remaining = maxChars - totalChars;
-          files.push({
-            path: filePath,
-            startLine: 1,
-            endLine: Math.floor(remaining / (addedChars / lines.length)),
-            content: truncated.slice(0, remaining),
-            relevanceScore: 1.0,
-          });
-          break;
-        }
-
-        files.push({
-          path: filePath,
-          startLine: 1,
-          endLine: lines.length,
-          content: truncated,
-          relevanceScore: 1.0,
-        });
-        totalChars += addedChars;
-      } catch {
-        // Skip unreadable files
-      }
-    }
-
-    return {
-      files,
+    return buildContextFromFiles(filePaths, rootPath, {
+      maxChars: maxTokens * 4,
       maxContextTokens: maxTokens,
-    };
+    });
   }
 
   private formatCallChainForPrompt(chain: CallChain): string {
