@@ -11,20 +11,16 @@ export function success(msg: string): string {
   return chalk.green('✓') + ' ' + msg;
 }
 
-export function warn(msg: string): string {
-  return chalk.yellow('!') + ' ' + msg;
-}
-
-export function error(msg: string): string {
-  return chalk.red('✗') + ' ' + msg;
-}
-
 export function riskLevel(level: string): string {
   switch (level) {
-    case 'high': return chalk.red.bold(level.toUpperCase());
-    case 'medium': return chalk.yellow.bold(level.toUpperCase());
-    case 'low': return chalk.green.bold(level.toUpperCase());
-    default: return level;
+    case 'high':
+      return chalk.red.bold(level.toUpperCase());
+    case 'medium':
+      return chalk.yellow.bold(level.toUpperCase());
+    case 'low':
+      return chalk.green.bold(level.toUpperCase());
+    default:
+      return level;
   }
 }
 

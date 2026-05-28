@@ -2,9 +2,16 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 vi.mock('../../../src/core/config.js', () => ({
   loadConfig: vi.fn().mockReturnValue({
-    model: 'test', maxTokens: 1000, temperature: 0, maxFiles: 100,
-    maxFileSizeBytes: 10000, languages: ['typescript'], indexPath: '.codeinsight/index.json', logLevel: 'info',
-    repoOwner: 'testowner', repoName: 'testrepo',
+    model: 'test',
+    maxTokens: 1000,
+    temperature: 0,
+    maxFiles: 100,
+    maxFileSizeBytes: 10000,
+    languages: ['typescript'],
+    indexPath: '.codeinsight/index.json',
+    logLevel: 'info',
+    repoOwner: 'testowner',
+    repoName: 'testrepo',
   }),
 }));
 
@@ -21,7 +28,12 @@ vi.mock('../../../src/index/index-pipeline.js', () => ({
 vi.mock('../../../src/github/github-client.js', () => ({
   GitHubClient: vi.fn().mockImplementation(() => ({
     getIssue: vi.fn().mockResolvedValue({
-      number: 1, title: 'Bug', body: 'Something broke', labels: ['bug'], state: 'open', url: '',
+      number: 1,
+      title: 'Bug',
+      body: 'Something broke',
+      labels: ['bug'],
+      state: 'open',
+      url: '',
     }),
   })),
 }));
@@ -54,9 +66,32 @@ describe('issueCommand', () => {
     await expect(issueCommand('abc')).rejects.toThrow('Invalid issue number');
   });
 
+  it('should throw for negative issue number', async () => {
+    const { issueCommand } = await import('../../../src/cli/issue-command.js');
+    await expect(issueCommand('-1')).rejects.toThrow('Must be a positive integer');
+  });
+
+  it('should throw for zero issue number', async () => {
+    const { issueCommand } = await import('../../../src/cli/issue-command.js');
+    await expect(issueCommand('0')).rejects.toThrow('Must be a positive integer');
+  });
+
+  it('should throw for float issue number', async () => {
+    const { issueCommand } = await import('../../../src/cli/issue-command.js');
+    await expect(issueCommand('1.5')).rejects.toThrow('Must be a positive integer');
+  });
+
   it('should analyze a valid issue', async () => {
+    const { IssueLinker } = await import('../../../src/github/issue-linker.js');
     const { issueCommand } = await import('../../../src/cli/issue-command.js');
     await issueCommand('1');
     expect(mockLoadIndex).toHaveBeenCalled();
+
+    // Verify IssueLinker.linkIssue was called
+    const linkerInstance = (IssueLinker as unknown as vi.Mock).mock.results[0].value;
+    expect(linkerInstance.linkIssue).toHaveBeenCalled();
+    const passedIssue = linkerInstance.linkIssue.mock.calls[0][0];
+    expect(passedIssue.number).toBe(1);
+    expect(passedIssue.title).toBe('Bug');
   });
 });

@@ -1,4 +1,5 @@
 import type { CodeGraph } from './code-graph.js';
+import type { GraphEdge } from './types.js';
 import { formatFileRef } from '../utils/file-reference.js';
 
 export interface CallChainNode {
@@ -25,41 +26,21 @@ export class CallChainTracer {
   }
 
   traceCallees(symbolId: string, maxDepth?: number): CallChain {
-    const startNode = this.graph.getNode(symbolId);
-    if (!startNode) {
-      return { start: this.makeChainNode(symbolId, 0), chain: [], truncated: false };
-    }
-
-    const start = this.makeChainNode(symbolId, 0);
-    const chains: CallChainNode[][] = [];
-    const visited = new Set<string>();
-
-    this.dfsCallees(symbolId, 0, [], chains, visited, maxDepth ?? this.maxDepth);
-
-    return {
-      start,
-      chain: chains,
-      truncated: chains.some((c) => c.length >= (maxDepth ?? this.maxDepth)),
-    };
+    return this.trace(
+      symbolId,
+      (nodeId) => this.graph.getOutgoing(nodeId, 'calls'),
+      (edge) => edge.target,
+      maxDepth,
+    );
   }
 
   traceCallers(symbolId: string, maxDepth?: number): CallChain {
-    const startNode = this.graph.getNode(symbolId);
-    if (!startNode) {
-      return { start: this.makeChainNode(symbolId, 0), chain: [], truncated: false };
-    }
-
-    const start = this.makeChainNode(symbolId, 0);
-    const chains: CallChainNode[][] = [];
-    const visited = new Set<string>();
-
-    this.dfsCallers(symbolId, 0, [], chains, visited, maxDepth ?? this.maxDepth);
-
-    return {
-      start,
-      chain: chains,
-      truncated: chains.some((c) => c.length >= (maxDepth ?? this.maxDepth)),
-    };
+    return this.trace(
+      symbolId,
+      (nodeId) => this.graph.getIncoming(nodeId, 'calls'),
+      (edge) => edge.source,
+      maxDepth,
+    );
   }
 
   formatChain(chain: CallChain): string {
@@ -90,63 +71,40 @@ export class CallChainTracer {
     return lines.join('\n');
   }
 
-  private dfsCallees(
-    nodeId: string,
-    depth: number,
-    currentPath: CallChainNode[],
-    allChains: CallChainNode[][],
-    visited: Set<string>,
-    maxDepth: number,
-  ): void {
-    if (depth >= maxDepth) {
-      allChains.push([...currentPath]);
-      return;
+  private trace(
+    symbolId: string,
+    getNeighbors: (nodeId: string) => GraphEdge[],
+    getNeighborId: (edge: GraphEdge) => string,
+    maxDepth?: number,
+  ): CallChain {
+    const startNode = this.graph.getNode(symbolId);
+    if (!startNode) {
+      return { start: this.makeChainNode(symbolId, 0), chain: [], truncated: false };
     }
 
-    visited.add(nodeId);
-    const outgoing = this.graph.getOutgoing(nodeId, 'calls');
+    const start = this.makeChainNode(symbolId, 0);
+    const chains: CallChainNode[][] = [];
+    const visited = new Set<string>();
+    const depth = maxDepth ?? this.maxDepth;
 
-    if (outgoing.length === 0) {
-      if (currentPath.length > 0) {
-        allChains.push([...currentPath]);
-      }
-      visited.delete(nodeId);
-      return;
-    }
+    this.dfs(symbolId, 0, [], chains, visited, depth, getNeighbors, getNeighborId);
 
-    for (const edge of outgoing) {
-      if (visited.has(edge.target)) continue;
-
-      const targetNode = this.graph.getNode(edge.target);
-      if (!targetNode) continue;
-
-      const chainNode: CallChainNode = {
-        symbolId: edge.target,
-        symbolName: targetNode.symbol.name,
-        filePath: targetNode.filePath,
-        line: edge.line,
-        depth: depth + 1,
-      };
-
-      currentPath.push(chainNode);
-      this.dfsCallees(edge.target, depth + 1, currentPath, allChains, visited, maxDepth);
-      currentPath.pop();
-    }
-
-    visited.delete(nodeId);
-
-    if (outgoing.length === 0 && currentPath.length > 0) {
-      allChains.push([...currentPath]);
-    }
+    return {
+      start,
+      chain: chains,
+      truncated: chains.some((c) => c.length >= depth),
+    };
   }
 
-  private dfsCallers(
+  private dfs(
     nodeId: string,
     depth: number,
     currentPath: CallChainNode[],
     allChains: CallChainNode[][],
     visited: Set<string>,
     maxDepth: number,
+    getNeighbors: (nodeId: string) => GraphEdge[],
+    getNeighborId: (edge: GraphEdge) => string,
   ): void {
     if (depth >= maxDepth) {
       allChains.push([...currentPath]);
@@ -154,9 +112,9 @@ export class CallChainTracer {
     }
 
     visited.add(nodeId);
-    const incoming = this.graph.getIncoming(nodeId, 'calls');
+    const edges = getNeighbors(nodeId);
 
-    if (incoming.length === 0) {
+    if (edges.length === 0) {
       if (currentPath.length > 0) {
         allChains.push([...currentPath]);
       }
@@ -164,30 +122,36 @@ export class CallChainTracer {
       return;
     }
 
-    for (const edge of incoming) {
-      if (visited.has(edge.source)) continue;
+    for (const edge of edges) {
+      const neighborId = getNeighborId(edge);
+      if (visited.has(neighborId)) continue;
 
-      const sourceNode = this.graph.getNode(edge.source);
-      if (!sourceNode) continue;
+      const neighborNode = this.graph.getNode(neighborId);
+      if (!neighborNode) continue;
 
       const chainNode: CallChainNode = {
-        symbolId: edge.source,
-        symbolName: sourceNode.symbol.name,
-        filePath: sourceNode.filePath,
+        symbolId: neighborId,
+        symbolName: neighborNode.symbol.name,
+        filePath: neighborNode.filePath,
         line: edge.line,
         depth: depth + 1,
       };
 
       currentPath.push(chainNode);
-      this.dfsCallers(edge.source, depth + 1, currentPath, allChains, visited, maxDepth);
+      this.dfs(
+        neighborId,
+        depth + 1,
+        currentPath,
+        allChains,
+        visited,
+        maxDepth,
+        getNeighbors,
+        getNeighborId,
+      );
       currentPath.pop();
     }
 
     visited.delete(nodeId);
-
-    if (incoming.length === 0 && currentPath.length > 0) {
-      allChains.push([...currentPath]);
-    }
   }
 
   private makeChainNode(symbolId: string, depth: number): CallChainNode {

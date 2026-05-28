@@ -1,10 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { writeFile, mkdir } from 'node:fs/promises';
+import { writeFile } from 'node:fs/promises';
 
 vi.mock('../../../src/core/config.js', () => ({
   loadConfig: vi.fn().mockReturnValue({
-    model: 'test', maxTokens: 1000, temperature: 0, maxFiles: 100,
-    maxFileSizeBytes: 10000, languages: ['typescript'], indexPath: '.codeinsight/index.json', logLevel: 'info',
+    model: 'test',
+    maxTokens: 1000,
+    temperature: 0,
+    maxFiles: 100,
+    maxFileSizeBytes: 10000,
+    languages: ['typescript'],
+    indexPath: '.codeinsight/index.json',
+    logLevel: 'info',
   }),
 }));
 
@@ -53,14 +59,35 @@ describe('docsCommand', () => {
   });
 
   it('should generate readme', async () => {
+    const { DocGeneration } = await import('../../../src/analysis/doc-generation.js');
     const { docsCommand } = await import('../../../src/cli/docs-command.js');
     await docsCommand('readme');
     expect(mockLoadIndex).toHaveBeenCalled();
+
+    // Verify DocGeneration.generate was called with 'readme'
+    const docGenInstance = (DocGeneration as unknown as vi.Mock).mock.results[0].value;
+    expect(docGenInstance.generate).toHaveBeenCalledWith('readme', expect.any(String));
+
+    // Verify file was written
+    expect(writeFile).toHaveBeenCalled();
+    const writeArgs = (writeFile as unknown as vi.Mock).mock.calls[0];
+    expect(writeArgs[0]).toContain('README.md');
+    expect(writeArgs[1]).toContain('# Generated Doc');
   });
 
   it('should generate architecture diagram', async () => {
+    const { DocGeneration } = await import('../../../src/analysis/doc-generation.js');
     const { docsCommand } = await import('../../../src/cli/docs-command.js');
     await docsCommand('architecture');
     expect(mockLoadIndex).toHaveBeenCalled();
+
+    // Verify DocGeneration.generateArchitectureDiagram was called
+    const docGenInstance = (DocGeneration as unknown as vi.Mock).mock.results[0].value;
+    expect(docGenInstance.generateArchitectureDiagram).toHaveBeenCalled();
+
+    // Verify file was written
+    expect(writeFile).toHaveBeenCalled();
+    const writeArgs = (writeFile as unknown as vi.Mock).mock.calls[0];
+    expect(writeArgs[0]).toContain('architecture.md');
   });
 });

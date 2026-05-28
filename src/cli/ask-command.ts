@@ -1,27 +1,14 @@
-import { resolve } from 'node:path';
-import { loadConfig } from '../core/config.js';
-import { IndexPipeline } from '../index/index-pipeline.js';
 import { ClaudeClient } from '../llm/claude-client.js';
 import { PromptBuilder } from '../llm/prompt-builder.js';
-import { logger } from '../utils/logger.js';
 import { extractKeywords } from '../utils/keyword-extractor.js';
 import { spinner, filePath, chalk } from '../utils/ux.js';
+import { loadIndexOrThrow } from './shared.js';
 import type { CodeContext } from '../llm/types.js';
 import type { CodeGraph } from '../graph/code-graph.js';
 
 export async function askCommand(question: string, repoPath?: string): Promise<void> {
-  const rootPath = repoPath ? resolve(repoPath) : process.cwd();
-  const config = loadConfig(rootPath);
-  const pipeline = new IndexPipeline();
-
   const sp = spinner('Loading index...');
-  const hasIndex = await pipeline.hasIndex(rootPath, config);
-  if (!hasIndex) {
-    sp.fail('No index found');
-    throw new Error('No index found. Run "codeinsight index <repo>" first.');
-  }
-
-  const { graph, metadata } = await pipeline.loadIndex(rootPath, config);
+  const { graph, config, rootPath, metadata } = await loadIndexOrThrow(repoPath);
   sp.succeed(`Index loaded: ${metadata.nodeCount} nodes from ${metadata.fileCount} files`);
 
   const sp2 = spinner('Retrieving relevant context...');
@@ -52,7 +39,11 @@ export async function askCommand(question: string, repoPath?: string): Promise<v
     }
   }
 
-  console.log(chalk.dim(`\n(${response.tokensUsed.input} input tokens, ${response.tokensUsed.output} output tokens)`));
+  console.log(
+    chalk.dim(
+      `\n(${response.tokensUsed.input} input tokens, ${response.tokensUsed.output} output tokens)`,
+    ),
+  );
 }
 
 async function buildContext(
@@ -76,4 +67,3 @@ async function buildContext(
   const promptBuilder = new PromptBuilder();
   return promptBuilder.buildContextFromFiles(filePaths, rootPath, maxTokens);
 }
-

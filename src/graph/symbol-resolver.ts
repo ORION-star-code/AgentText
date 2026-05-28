@@ -1,5 +1,4 @@
 import type { ParsedFile, ParsedCall } from '../parser/types.js';
-import type { GraphEdge } from './types.js';
 import { CodeGraph } from './code-graph.js';
 import { createNodeId } from './types.js';
 import { logger } from '../utils/logger.js';
@@ -58,7 +57,10 @@ export class SymbolResolver {
               // Create edges for all symbols that might use this import
               for (const call of file.callExpressions) {
                 if (call.calleeName === specifier) {
-                  const callerNodeId = createNodeId(file.filePath, this.getTopLevelSymbol(call, file));
+                  const callerNodeId = createNodeId(
+                    file.filePath,
+                    this.getTopLevelSymbol(call, file),
+                  );
                   if (graph.getNode(callerNodeId)) {
                     graph.addEdge({
                       type: 'calls',
@@ -85,7 +87,11 @@ export class SymbolResolver {
         const callerNodeId = createNodeId(file.filePath, this.getTopLevelSymbol(call, file));
         const calleeNodeId = createNodeId(file.filePath, call.calleeName);
 
-        if (callerNodeId !== calleeNodeId && graph.getNode(callerNodeId) && graph.getNode(calleeNodeId)) {
+        if (
+          callerNodeId !== calleeNodeId &&
+          graph.getNode(callerNodeId) &&
+          graph.getNode(calleeNodeId)
+        ) {
           graph.addEdge({
             type: 'calls',
             source: callerNodeId,

@@ -36,12 +36,10 @@ export class TypeScriptParser implements Parser {
     for (const importDecl of sourceFile.getImportDeclarations()) {
       const moduleSpecifier = importDecl.getModuleSpecifierValue();
       const specifiers: string[] = [];
-      let isDefault = false;
 
       const defaultImport = importDecl.getDefaultImport();
       if (defaultImport) {
         specifiers.push(defaultImport.getText());
-        isDefault = true;
       }
 
       const namedImports = importDecl.getNamedImports();
@@ -57,7 +55,7 @@ export class TypeScriptParser implements Parser {
       imports.push({
         source: moduleSpecifier,
         specifiers,
-        isDefault,
+        isDefault: !!defaultImport,
         startLine: importDecl.getStartLineNumber(),
       });
     }
@@ -106,7 +104,11 @@ export class TypeScriptParser implements Parser {
         startLine: func.getStartLineNumber(),
         endLine: func.getEndLineNumber(),
         startColumn: 0,
-        docComment: func.getJsDocs().map((d) => d.getDescription()).join('\n') || undefined,
+        docComment:
+          func
+            .getJsDocs()
+            .map((d) => d.getDescription())
+            .join('\n') || undefined,
         parameters: func.getParameters().map(mapParameter),
         returnType: func.getReturnType().getText(),
         isExported,
@@ -127,7 +129,11 @@ export class TypeScriptParser implements Parser {
         startLine: cls.getStartLineNumber(),
         endLine: cls.getEndLineNumber(),
         startColumn: 0,
-        docComment: cls.getJsDocs().map((d) => d.getDescription()).join('\n') || undefined,
+        docComment:
+          cls
+            .getJsDocs()
+            .map((d) => d.getDescription())
+            .join('\n') || undefined,
         isExported,
       });
 
@@ -142,7 +148,11 @@ export class TypeScriptParser implements Parser {
           startLine: method.getStartLineNumber(),
           endLine: method.getEndLineNumber(),
           startColumn: 0,
-          docComment: method.getJsDocs().map((d) => d.getDescription()).join('\n') || undefined,
+          docComment:
+            method
+              .getJsDocs()
+              .map((d) => d.getDescription())
+              .join('\n') || undefined,
           parameters: method.getParameters().map(mapParameter),
           returnType: method.getReturnType().getText(),
           visibility: visibility as 'public' | 'private' | 'protected' | undefined,
@@ -177,7 +187,11 @@ export class TypeScriptParser implements Parser {
         startLine: iface.getStartLineNumber(),
         endLine: iface.getEndLineNumber(),
         startColumn: 0,
-        docComment: iface.getJsDocs().map((d) => d.getDescription()).join('\n') || undefined,
+        docComment:
+          iface
+            .getJsDocs()
+            .map((d) => d.getDescription())
+            .join('\n') || undefined,
         isExported: iface.isExported(),
       });
     }
@@ -233,11 +247,7 @@ export class TypeScriptParser implements Parser {
     };
   }
 
-  private collectCallExpressions(
-    node: Node,
-    callerName: string,
-    result: ParsedCall[],
-  ): void {
+  private collectCallExpressions(node: Node, callerName: string, result: ParsedCall[]): void {
     node.forEachDescendant((desc) => {
       if (Node.isCallExpression(desc)) {
         const expression = desc.getExpression();
@@ -261,7 +271,12 @@ export class TypeScriptParser implements Parser {
   }
 }
 
-function mapParameter(param: { getName: () => string; getType: () => { getText: () => string }; isOptional?: () => boolean; hasInitializer?: () => boolean }): ParameterInfo {
+function mapParameter(param: {
+  getName: () => string;
+  getType: () => { getText: () => string };
+  isOptional?: () => boolean;
+  hasInitializer?: () => boolean;
+}): ParameterInfo {
   return {
     name: param.getName(),
     type: param.getType().getText(),

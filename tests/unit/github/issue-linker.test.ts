@@ -2,7 +2,6 @@ import { describe, it, expect } from 'vitest';
 import { IssueLinker } from '../../../src/github/issue-linker.js';
 import { CodeGraph } from '../../../src/graph/code-graph.js';
 import type { Issue } from '../../../src/github/types.js';
-import type { GraphNode } from '../../../src/graph/types.js';
 
 function makeIssue(overrides: Partial<Issue> = {}): Issue {
   return {
@@ -16,17 +15,23 @@ function makeIssue(overrides: Partial<Issue> = {}): Issue {
   };
 }
 
-function makeGraphWithNodes(nodes: { id: string; name: string; filePath: string; line: number }[]): CodeGraph {
+function makeGraphWithNodes(
+  nodes: { id: string; name: string; filePath: string; line: number }[],
+): CodeGraph {
   const graph = new CodeGraph();
   for (const n of nodes) {
-    graph.addNode(n.id, {
-      name: n.name,
-      kind: 'function',
-      startLine: n.line,
-      endLine: n.line + 5,
-      startColumn: 0,
-      isExported: true,
-    }, n.filePath);
+    graph.addNode(
+      n.id,
+      {
+        name: n.name,
+        kind: 'function',
+        startLine: n.line,
+        endLine: n.line + 5,
+        startColumn: 0,
+        isExported: true,
+      },
+      n.filePath,
+    );
   }
   return graph;
 }
@@ -43,26 +48,24 @@ describe('IssueLinker', () => {
   it('should find relevant symbols by keyword match', () => {
     const graph = makeGraphWithNodes([
       { id: 'src/auth.ts::login', name: 'login', filePath: 'src/auth.ts', line: 10 },
-      { id: 'src/auth.ts::resetPassword', name: 'resetPassword', filePath: 'src/auth.ts', line: 30 },
+      {
+        id: 'src/auth.ts::resetPassword',
+        name: 'resetPassword',
+        filePath: 'src/auth.ts',
+        line: 30,
+      },
     ]);
     const linker = new IssueLinker(graph);
-    const link = linker.linkIssue(makeIssue({
-      title: 'login fails',
-      body: 'the login function returns error',
-    }));
+    const link = linker.linkIssue(
+      makeIssue({
+        title: 'login fails',
+        body: 'the login function returns error',
+      }),
+    );
     // "login" should match the symbol
     const loginSym = link.relevantSymbols.find((s) => s.name === 'login');
     expect(loginSym).toBeDefined();
     expect(loginSym?.filePath).toBe('src/auth.ts');
-  });
-
-  it('should link multiple issues', () => {
-    const graph = makeGraphWithNodes([]);
-    const linker = new IssueLinker(graph);
-    const links = linker.linkIssues([makeIssue(), makeIssue({ number: 2, title: 'Other issue' })]);
-    expect(links).toHaveLength(2);
-    expect(links[0].issue.number).toBe(1);
-    expect(links[1].issue.number).toBe(2);
   });
 
   it('should return empty symbols when no matches', () => {

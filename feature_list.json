@@ -71,6 +71,22 @@
       "dependencies": ["feat-008"],
       "status": "done",
       "evidence": "54 tests pass, all 6 CLI commands wired, ARCHITECTURE.md complete"
+    },
+    {
+      "id": "feat-010",
+      "name": "代码质量优化",
+      "description": "多Agent并行优化：死代码清理、重复代码消除、测试强化",
+      "dependencies": ["feat-009"],
+      "status": "done",
+      "evidence": "160 tests pass (32 files), dead code removed, CLI boilerplate extracted, DFS unified, type duplicates eliminated"
+    },
+    {
+      "id": "feat-011",
+      "name": "工作流自动化",
+      "description": "CI/CD、Git hooks、ESLint flat config、环境标准化、SessionStart hook",
+      "dependencies": ["feat-010"],
+      "status": "done",
+      "evidence": "GitHub Actions CI, husky+lint-staged+commitlint, eslint.config.js, .nvmrc+.env.example, SessionStart review hook"
     }
   ]
 }

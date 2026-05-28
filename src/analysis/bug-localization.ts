@@ -1,5 +1,4 @@
 import type { CodeGraph } from '../graph/code-graph.js';
-import type { CodeContext } from '../llm/types.js';
 import { ClaudeClient } from '../llm/claude-client.js';
 import type { ClaudeConfig } from '../llm/claude-client.js';
 import { PromptBuilder } from '../llm/prompt-builder.js';
@@ -56,5 +55,4 @@ export class BugLocalization {
 
     return [...files].slice(0, 15);
   }
-
 }

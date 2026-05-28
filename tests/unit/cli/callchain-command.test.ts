@@ -2,8 +2,14 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 vi.mock('../../../src/core/config.js', () => ({
   loadConfig: vi.fn().mockReturnValue({
-    model: 'test', maxTokens: 1000, temperature: 0, maxFiles: 100,
-    maxFileSizeBytes: 10000, languages: ['typescript'], indexPath: '.codeinsight/index.json', logLevel: 'info',
+    model: 'test',
+    maxTokens: 1000,
+    temperature: 0,
+    maxFiles: 100,
+    maxFileSizeBytes: 10000,
+    languages: ['typescript'],
+    indexPath: '.codeinsight/index.json',
+    logLevel: 'info',
   }),
 }));
 
@@ -37,8 +43,13 @@ describe('callchainCommand', () => {
   });
 
   it('should run call chain analysis', async () => {
+    const { CallChainAnalysis } = await import('../../../src/analysis/call-chain-analysis.js');
     const { callchainCommand } = await import('../../../src/cli/callchain-command.js');
     await callchainCommand('foo');
     expect(mockLoadIndex).toHaveBeenCalled();
+
+    // Verify CallChainAnalysis.analyzeSymbol was called with the symbol name
+    const analysisInstance = (CallChainAnalysis as unknown as vi.Mock).mock.results[0].value;
+    expect(analysisInstance.analyzeSymbol).toHaveBeenCalledWith('foo');
   });
 });

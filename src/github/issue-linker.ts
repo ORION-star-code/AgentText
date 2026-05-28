@@ -29,11 +29,6 @@ export class IssueLinker {
     };
   }
 
-  linkIssues(issues: Issue[]): IssueLink[] {
-    return issues.map((issue) => this.linkIssue(issue));
-  }
-
-
   private findRelevantSymbols(keywords: string[]): IssueLink['relevantSymbols'] {
     const results: Map<string, IssueLink['relevantSymbols'][number]> = new Map();
 

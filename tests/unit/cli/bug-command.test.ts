@@ -2,8 +2,14 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 vi.mock('../../../src/core/config.js', () => ({
   loadConfig: vi.fn().mockReturnValue({
-    model: 'test', maxTokens: 1000, temperature: 0, maxFiles: 100,
-    maxFileSizeBytes: 10000, languages: ['typescript'], indexPath: '.codeinsight/index.json', logLevel: 'info',
+    model: 'test',
+    maxTokens: 1000,
+    temperature: 0,
+    maxFiles: 100,
+    maxFileSizeBytes: 10000,
+    languages: ['typescript'],
+    indexPath: '.codeinsight/index.json',
+    logLevel: 'info',
   }),
 }));
 
@@ -37,8 +43,16 @@ describe('bugCommand', () => {
   });
 
   it('should run bug localization', async () => {
+    const { BugLocalization } = await import('../../../src/analysis/bug-localization.js');
     const { bugCommand } = await import('../../../src/cli/bug-command.js');
     await bugCommand('TypeError in login');
     expect(mockLoadIndex).toHaveBeenCalled();
+
+    // Verify BugLocalization.localize was called with the description
+    const localizationInstance = (BugLocalization as unknown as vi.Mock).mock.results[0].value;
+    expect(localizationInstance.localize).toHaveBeenCalledWith(
+      'TypeError in login',
+      expect.any(String),
+    );
   });
 });

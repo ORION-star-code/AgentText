@@ -21,24 +21,37 @@
     "deny": []
   },
   "hooks": {
-    "PreToolUse": [
+    "PostToolUse": [
       {
-        "matcher": "Bash",
+        "matcher": "Write|Edit",
         "hooks": [
           {
             "type": "command",
-            "command": "echo '执行命令前检查...'"
+            "command": "bash C:/Users/ORION/Desktop/AgentText/scripts/post-edit-review.sh",
+            "timeout": 300,
+            "statusMessage": "Running security & code quality reviews..."
           }
         ]
       }
     ],
-    "PostToolUse": [
+    "SessionStart": [
       {
-        "matcher": "Write",
         "hooks": [
           {
             "type": "command",
-            "command": "echo '文件已写入'"
+            "command": "bash C:/Users/ORION/Desktop/AgentText/scripts/check-reviews.sh",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PermissionRequest": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell.exe -ExecutionPolicy Bypass -File C:/Users/ORION/Desktop/AgentText/scripts/notify-input-needed.ps1 2>/dev/null || true"
           }
         ]
       }

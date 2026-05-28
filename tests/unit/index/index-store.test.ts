@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { CodeGraph } from '../../../src/graph/code-graph.js';
@@ -57,5 +57,21 @@ describe('IndexStore', () => {
     await store.save(graph, indexPath, '/test');
 
     expect(await store.exists(indexPath)).toBe(true);
+  });
+
+  it('should throw on corrupt/invalid JSON file', async () => {
+    const store = new IndexStore();
+    const corruptPath = join(testDir, 'corrupt.json');
+    await writeFile(corruptPath, 'not valid json {{{', 'utf-8');
+
+    await expect(store.load(corruptPath)).rejects.toThrow();
+  });
+
+  it('should throw on empty file', async () => {
+    const store = new IndexStore();
+    const emptyPath = join(testDir, 'empty.json');
+    await writeFile(emptyPath, '', 'utf-8');
+
+    await expect(store.load(emptyPath)).rejects.toThrow();
   });
 });

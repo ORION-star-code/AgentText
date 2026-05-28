@@ -1,5 +1,4 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import type { Issue, PrDiff, ChangedFile, RepoInfo } from '../../../src/github/types.js';
 
 // Mock @octokit/rest
 const mockOctokit = {
@@ -37,7 +36,13 @@ describe('GitHubClient', () => {
       });
       mockOctokit.pulls.listFiles.mockResolvedValue({
         data: [
-          { filename: 'src/a.ts', status: 'modified', additions: 10, deletions: 5, patch: '@@ -1,5 +1,10 @@' },
+          {
+            filename: 'src/a.ts',
+            status: 'modified',
+            additions: 10,
+            deletions: 5,
+            patch: '@@ -1,5 +1,10 @@',
+          },
         ],
       });
 
@@ -79,7 +84,15 @@ describe('GitHubClient', () => {
       mockOctokit.issues.listForRepo.mockResolvedValue({
         data: [
           { number: 1, title: 'Issue 1', body: '', labels: [], state: 'open', html_url: '' },
-          { number: 2, title: 'PR 2', body: '', labels: [], state: 'open', html_url: '', pull_request: {} },
+          {
+            number: 2,
+            title: 'PR 2',
+            body: '',
+            labels: [],
+            state: 'open',
+            html_url: '',
+            pull_request: {},
+          },
         ],
       });
 
@@ -108,6 +121,44 @@ describe('GitHubClient', () => {
       expect(info.owner).toBe('testuser');
       expect(info.name).toBe('testrepo');
       expect(info.defaultBranch).toBe('main');
+    });
+  });
+
+  describe('API error handling', () => {
+    it('should propagate 401 authentication error', async () => {
+      mockOctokit.pulls.get.mockRejectedValue(
+        Object.assign(new Error('Bad credentials'), { status: 401 }),
+      );
+
+      const client = await createClient();
+      await expect(client.getPrDiff('owner', 'repo', 1)).rejects.toThrow('Bad credentials');
+    });
+
+    it('should propagate 404 not found error', async () => {
+      mockOctokit.pulls.get.mockRejectedValue(
+        Object.assign(new Error('Not Found'), { status: 404 }),
+      );
+
+      const client = await createClient();
+      await expect(client.getPrDiff('owner', 'repo', 999)).rejects.toThrow('Not Found');
+    });
+
+    it('should propagate 401 error for getIssue', async () => {
+      mockOctokit.issues.get.mockRejectedValue(
+        Object.assign(new Error('Bad credentials'), { status: 401 }),
+      );
+
+      const client = await createClient();
+      await expect(client.getIssue('owner', 'repo', 1)).rejects.toThrow('Bad credentials');
+    });
+
+    it('should propagate 404 error for getIssue', async () => {
+      mockOctokit.issues.get.mockRejectedValue(
+        Object.assign(new Error('Not Found'), { status: 404 }),
+      );
+
+      const client = await createClient();
+      await expect(client.getIssue('owner', 'repo', 999)).rejects.toThrow('Not Found');
     });
   });
 });

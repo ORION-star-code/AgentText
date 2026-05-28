@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { writeFileSync, unlinkSync, mkdirSync, rmSync } from 'node:fs';
+import { writeFileSync, mkdirSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 
@@ -33,10 +33,13 @@ describe('Config', () => {
     });
 
     it('should merge user config with defaults', async () => {
-      writeFileSync(join(testDir, '.codeinsight.json'), JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
-        maxTokens: 2048,
-      }));
+      writeFileSync(
+        join(testDir, '.codeinsight.json'),
+        JSON.stringify({
+          model: 'claude-haiku-4-5-20251001',
+          maxTokens: 2048,
+        }),
+      );
       const { loadConfig } = await import('../../../src/core/config.js');
       const config = loadConfig(testDir);
       expect(config.model).toBe('claude-haiku-4-5-20251001');
@@ -56,45 +59,63 @@ describe('Config', () => {
     it('should reject empty model', async () => {
       const { validateConfig, loadConfig } = await import('../../../src/core/config.js');
       const config = loadConfig(testDir);
-      expect(() => validateConfig({ ...config, model: '' })).toThrow('model must be a non-empty string');
+      expect(() => validateConfig({ ...config, model: '' })).toThrow(
+        'model must be a non-empty string',
+      );
     });
 
     it('should reject invalid maxTokens', async () => {
       const { validateConfig, loadConfig } = await import('../../../src/core/config.js');
       const config = loadConfig(testDir);
-      expect(() => validateConfig({ ...config, maxTokens: 0 })).toThrow('maxTokens must be a positive number');
-      expect(() => validateConfig({ ...config, maxTokens: -1 })).toThrow('maxTokens must be a positive number');
+      expect(() => validateConfig({ ...config, maxTokens: 0 })).toThrow(
+        'maxTokens must be a positive number',
+      );
+      expect(() => validateConfig({ ...config, maxTokens: -1 })).toThrow(
+        'maxTokens must be a positive number',
+      );
     });
 
     it('should reject invalid temperature', async () => {
       const { validateConfig, loadConfig } = await import('../../../src/core/config.js');
       const config = loadConfig(testDir);
-      expect(() => validateConfig({ ...config, temperature: -0.1 })).toThrow('temperature must be between 0 and 1');
-      expect(() => validateConfig({ ...config, temperature: 1.1 })).toThrow('temperature must be between 0 and 1');
+      expect(() => validateConfig({ ...config, temperature: -0.1 })).toThrow(
+        'temperature must be between 0 and 1',
+      );
+      expect(() => validateConfig({ ...config, temperature: 1.1 })).toThrow(
+        'temperature must be between 0 and 1',
+      );
     });
 
     it('should reject invalid maxFiles', async () => {
       const { validateConfig, loadConfig } = await import('../../../src/core/config.js');
       const config = loadConfig(testDir);
-      expect(() => validateConfig({ ...config, maxFiles: 0 })).toThrow('maxFiles must be a positive number');
+      expect(() => validateConfig({ ...config, maxFiles: 0 })).toThrow(
+        'maxFiles must be a positive number',
+      );
     });
 
     it('should reject invalid maxFileSizeBytes', async () => {
       const { validateConfig, loadConfig } = await import('../../../src/core/config.js');
       const config = loadConfig(testDir);
-      expect(() => validateConfig({ ...config, maxFileSizeBytes: 0 })).toThrow('maxFileSizeBytes must be a positive number');
+      expect(() => validateConfig({ ...config, maxFileSizeBytes: 0 })).toThrow(
+        'maxFileSizeBytes must be a positive number',
+      );
     });
 
     it('should reject non-array languages', async () => {
       const { validateConfig, loadConfig } = await import('../../../src/core/config.js');
       const config = loadConfig(testDir);
-      expect(() => validateConfig({ ...config, languages: 'typescript' as any })).toThrow('languages must be an array');
+      expect(() =>
+        validateConfig({ ...config, languages: 'typescript' as unknown as string[] }),
+      ).toThrow('languages must be an array');
     });
 
     it('should reject invalid logLevel', async () => {
       const { validateConfig, loadConfig } = await import('../../../src/core/config.js');
       const config = loadConfig(testDir);
-      expect(() => validateConfig({ ...config, logLevel: 'verbose' as any })).toThrow('logLevel must be one of');
+      expect(() => validateConfig({ ...config, logLevel: 'verbose' as unknown as 'info' })).toThrow(
+        'logLevel must be one of',
+      );
     });
 
     it('should accept valid config', async () => {
